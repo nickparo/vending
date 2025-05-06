@@ -7,11 +7,13 @@ import java.util.Scanner;
 public class Machine {
     private List<Product> products;
     private Admin admin;
+    private Cassa cassa;
     Scanner sc;
 
     public Machine(){
         initProducts(); 
         sc = new Scanner(System.in);
+        cassa = new Cassa();
     }
 
     //utente arriva alla macchinetta
@@ -90,6 +92,23 @@ public class Machine {
         } else {
             System.out.println("password errata");
         }
+
+        boolean adminLoop = true;
+        while(adminLoop){
+            //TODO stampare prodotti e cassa
+            System.out.println("\nGestione Monete o Gestione Prodotti? (monete/prodotti/esci)");
+            String sceltaGest = sc.nextLine();
+            if(sceltaGest.equals("monete")){
+                cashManagement();
+            } else if (sceltaGest.equals("prodotti")){
+                productManagement();
+            } else if (sceltaGest.equalsIgnoreCase("esci")) {
+                System.out.println("Uscito dalla modalità admin");
+                adminLoop = false; //TODO ritorno a menu principale
+            } else {
+                System.out.println("Errore, inserisci monete o prodotti"); //TODO ritorno a menu principale
+            }
+        }
     }
     //visualizzazione prodotti e quanti ce ne sono
     //aggiungi prodotto?
@@ -101,6 +120,53 @@ public class Machine {
     //se no, vuoi ritirare soldi o monete?
     //finito? se no riprendi
     //se si, esce da admin e riparte dall'inizio
+
+    private void cashManagement() {
+        boolean cashLoop = true;
+        while (cashLoop) {
+            System.out.println("\nGestione Monete  -  scegli un opzione");
+            System.out.println("1 Aggiungi Monete");
+            System.out.println("2 Rimuovi Monete");
+            System.out.println("3 Esci");
+        
+        
+
+            int scelta = sc.nextInt();
+            switch (scelta) {
+                case 1:
+                    System.out.println("Quale moneta vuoi aggiungere?");
+                    double coinAdd = sc.nextDouble();
+                    System.out.println("Quante ne vuoi aggiungere?");
+                    int quantityAdd = sc.nextInt();
+                    cassa.addCoin(coinAdd, quantityAdd);
+                    System.out.println(quantityAdd + " monete da " + coinAdd + "€ aggiunte.");
+                    break;
+
+                case 2:
+                    System.out.println("Quale moneta vuoi rimuovere?");
+                    double coinRem = sc.nextDouble();
+                    System.out.println("Quante ne vuoi rimuovere?");
+                    int quantityRem = sc.nextInt();
+                    cassa.removeCoin(coinRem, quantityRem);
+                    System.out.println(quantityRem + " monete da " + coinRem + "€ rimosse.");
+                    break;
+
+                case 3:
+                    System.err.println("Uscita dalla modalità Gestione Moneta");
+                    cashLoop = false;
+                    break;
+                default:
+                    System.out.println("Opzione non valida.");
+                    break;
+
+            }
+        }
+        
+    }
+
+    private void productManagement() {
+        
+    }
 
     private void initProducts(){ //gestisco prodotti
         products = new ArrayList<>();

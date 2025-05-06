@@ -26,4 +26,9 @@ public class Coin { //gestione monete (?)
         }
     }
 
+    @Override
+    public String toString() {
+        return String.format("Moneta: %.2f, Quantità: %d", value, quantity);
+    }
+
 }

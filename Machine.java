@@ -27,7 +27,7 @@ public class Machine {
         }
     }
 
-    private void userFlow(){ //Gestione utente si apre e visualizza tutti i prodotti della macchinetta divisi per numero 
+    private void userFlow() throws InterruptedException{ //Gestione utente si apre e visualizza tutti i prodotti della macchinetta divisi per numero 
         List<Product> cart = new ArrayList<>();
         double total = 0.00;//inizializzo a 0 importo
         boolean continueShopping = true;
@@ -58,8 +58,10 @@ public class Machine {
                 break;
             }
         }
-        System.out.println("Totale da pagare: " + total);
+        System.out.println("Totale da pagare: " + total+ " EUR");
+        payment(total);
     }
+
     //l'utente sceglie un prodotto- (implementare lista prodotti e menù visualizzazione)
     //ne vuole un altro? 
     //se si continua la selezione se no il sistema visualizza il totale dovuto
@@ -86,28 +88,26 @@ public class Machine {
         Scanner sc = new Scanner(System.in); //immettere password
         String password = sc.nextLine();
         if(password.equals("mario11")){
-            
+            boolean adminLoop = true;
+            while(adminLoop){
+                //TODO stampare cassa
+                System.out.println("\n-----------MENU ADMIN-----------");
+                System.out.println("\nGestione Monete o Gestione Prodotti? (monete/prodotti/esci)");
+    
+                String sceltaGest = sc.nextLine();
+                if(sceltaGest.equalsIgnoreCase("monete")){
+                    cashManagement();
+                } else if (sceltaGest.equalsIgnoreCase("prodotti")){
+                    productManagement();
+                } else if (sceltaGest.equalsIgnoreCase("esci")) {
+                    System.out.println("Uscito dalla modalità admin");
+                    adminLoop = false; //TODO ritorno a menu principale
+                } else {
+                    System.out.println("Errore, inserisci una voce del menu valida"); 
+                }
+            }
         } else {
             System.out.println("password errata");
-        }
-
-        boolean adminLoop = true;
-        while(adminLoop){
-            //TODO stampare cassa
-            System.out.println("\n-----------MENU ADMIN-----------");
-            System.out.println("\nGestione Monete o Gestione Prodotti? (monete/prodotti/esci)");
-
-            String sceltaGest = sc.nextLine();
-            if(sceltaGest.equalsIgnoreCase("monete")){
-                cashManagement();
-            } else if (sceltaGest.equalsIgnoreCase("prodotti")){
-                productManagement();
-            } else if (sceltaGest.equalsIgnoreCase("esci")) {
-                System.out.println("Uscito dalla modalità admin");
-                adminLoop = false; //TODO ritorno a menu principale
-            } else {
-                System.out.println("Errore, inserisci una voce del menu valida"); 
-            }
         }
     }
     //visualizzazione prodotti e quanti ce ne sono
@@ -135,22 +135,23 @@ public class Machine {
             int scelta = sc.nextInt();
             switch (scelta) {
                 case 1:
-                    //TODO print cassa
+                    cassa.printCassa();
                     System.out.println("\nQuale moneta vuoi aggiungere?");
                     double coinAdd = sc.nextDouble();
                     System.out.println("Quante ne vuoi aggiungere?");
                     int quantityAdd = sc.nextInt();
                     cassa.addCoin(coinAdd, quantityAdd);
-                    System.out.println("\n"+quantityAdd + " monete da " + coinAdd + "Euro aggiunte.");
+                    System.out.println("\n"+quantityAdd + " monete da " + coinAdd + "EUR aggiunte.");
                     break;
 
                 case 2:
+                    cassa.printCassa();
                     System.out.println("\nQuale moneta vuoi rimuovere?");
                     double coinRem = sc.nextDouble();
                     System.out.println("Quante ne vuoi rimuovere?");
                     int quantityRem = sc.nextInt();
                     cassa.removeCoin(coinRem, quantityRem);
-                    System.out.println("\n"+quantityRem + " monete da " + coinRem + "€ rimosse.");
+                    System.out.println("\n"+quantityRem + " monete da " + coinRem + "EUR rimosse.");
                     break;
 
                 case 3:
@@ -163,7 +164,6 @@ public class Machine {
 
             }
         }
-        
     }
 
     private void productManagement() {
@@ -206,7 +206,7 @@ public class Machine {
                     int qntitProd = sc.nextInt();
                     int newId = products.size() +1;
                     products.add(new Product(newId, nomProd, prezzProd, qntitProd));
-                    System.out.println("\nHai aggiunto "+ qntitProd+ " pezzi di "+ nomProd+ " al prezzo di " + prezzProd);
+                    System.out.println("\nHai aggiunto "+ qntitProd+ " pezzi di "+ nomProd+ " al prezzo di " + prezzProd + " EUR");
                     break;
                 case 4: 
                     productLoop = false;
@@ -221,7 +221,7 @@ public class Machine {
     private void printProducts() { //stampo prodotti
         System.out.println("\n--- Lista Prodotti ---");
         for (Product p : products) {
-            System.out.println(p.getId() + " - " + p.getName() + " | Prezzo: " + p.getPrice() + "€ | Quantità: " + p.getQuantity());
+            System.out.println(p.getId() + " - " + p.getName() + " | Prezzo: " + p.getPrice() + " EUR | Quantità: " + p.getQuantity());
         }
     }
 
@@ -238,11 +238,64 @@ public class Machine {
         products.add(new Product(9, "Cioccolato", 2.75, 10));
         products.add(new Product(10, "Merendina", 3.00, 10));
         products.add(new Product(11, "Succo ", 2.20, 10));
-        products.add(new Product(12, "CC", 0.50, 1));
+        products.add(new Product(12, "Frutta Secca", 0.50, 1));
 
     }
 
-    public void start(){
+    public void payment(double total) throws InterruptedException{
+        double insertedAmount = 0.0;
+        System.out.println("Scegli un metodo di Pagamento  - scegli un opzione");
+        System.out.println("1 Monete");
+        System.out.println("2 Banconote (Max 10 EUR)");
+        System.out.println("3 Carta");
+
+        int metodo = sc.nextInt();
+        switch (metodo) {
+            case 1:
+                while (insertedAmount < total) {
+                    System.out.println("\nInserisci le monete");
+                    double moneta = sc.nextDouble();
+                    if(moneta == 0.05 || moneta ==0.1 || moneta == 0.2 || moneta == 0.5 || moneta == 1 || moneta ==2){
+                        cassa.addCoin(moneta, 1);
+                        insertedAmount += moneta;
+                        System.out.println("Hai inserito " + insertedAmount + " EUR");
+                    } else {
+                        System.out.println("Moneta non accettata");
+                    }
+                }
+                break;
+            case 2:
+                while (insertedAmount < total) {
+                    System.out.println("Inserisci Banconote");
+                    int banconota = sc.nextInt();
+                    if (banconota == 5 || banconota == 10){
+                        insertedAmount += banconota;
+                    } else {
+                        System.out.println("Banconota inserita non valida");
+                    }
+                }
+                break;
+            case 3:
+                System.out.println("\nAppoggia la carta per il pagamento");
+                Thread.sleep(1000);
+                System.out.println("Pagamento di"+total+" EUR in corso, attendere prego");
+                Thread.sleep(1000);
+                System.out.println("\n---------------------");
+                Thread.sleep(1000);
+                System.out.println("\n---------------------");
+                Thread.sleep(1000);
+                System.out.println("\nPagamento completato, Grazie per l'acquisto.");
+                insertedAmount = total;
+                break;
+            default:
+                System.out.println("\nOpzione non valida");
+                break;
+        }
+
+        
+    }
+
+    public void start() throws InterruptedException{
         if (isAdmin()){
             adminFlow();
         } else {
@@ -250,7 +303,7 @@ public class Machine {
         }
     }
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         Machine machine =new Machine();
         machine.start();
         

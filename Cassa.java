@@ -1,15 +1,15 @@
 package Macchinetta;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class Cassa {
-    private Map<Double, Integer> coins; // Mappa delle monete (valore, quantità)
+    private Map<Double, Integer> coins; //mappa monete (valore, quantità)
 
     public Cassa(){
-        coins = new HashMap<>();
-
-        //Aggiungo monete
+        coins = new TreeMap<>(Collections.reverseOrder()); //Mappa delle monete (ordinate per dare resto da + grande a -)
         coins.put(0.05, 10);
         coins.put(0.10, 5);
         coins.put(0.20, 5);
@@ -32,9 +32,25 @@ public class Cassa {
         }
     }
 
-    public void printCassa(double value, int quantity){ //stampa l'inventario delle monete a quel punto
+    /*public void printCassa(double value, int quantity){ //stampa l'inventario delle monete a quel punto
         for (Map.Entry<Double, Integer> entry : coins.entrySet()) { //per ogni chiave nella collezione stampa
             System.out.println("Moneta: " + entry.getKey() + " EUR, Quantità: " + entry.getValue());  
         }
+    } */
+    public void printCassa() {
+        System.out.println("Inventario monete:");
+        for (Map.Entry<Double, Integer> entry : coins.entrySet()) {
+            double valore = entry.getKey();
+            int quantita = entry.getValue();
+            System.out.println("Moneta: " + valore + " EUR - Quantità: " + quantita);
+        }
+    }
+
+    public double calcuteTotal() {
+        double total = 0;
+        for (Map.Entry<Double, Integer> entry : coins.entrySet()) {
+            total += entry.getKey() * entry.getValue();
+        }
+        return total;
     }
 }

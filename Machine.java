@@ -6,12 +6,12 @@ import java.util.Scanner;
 
 public class Machine {
     private List<Product> products;
-    private Admin admin;
+    
     private Cassa cassa;
     Scanner sc;
 
     public Machine(){
-        initProducts(); 
+        initProducts();
         sc = new Scanner(System.in);
         cassa = new Cassa();
     }
@@ -27,16 +27,14 @@ public class Machine {
         }
     }
 
-    private void userFlow(){ //Gestione utente
+    private void userFlow(){ //Gestione utente si apre e visualizza tutti i prodotti della macchinetta divisi per numero 
         List<Product> cart = new ArrayList<>();
         double total = 0.00;//inizializzo a 0 importo
         boolean continueShopping = true;
 
         while (continueShopping) {
             System.out.println("\nProdotti disponibili:\n");
-            for (Product p : products){
-                System.out.println(p);
-            } 
+            printProducts();
             System.out.println("Inserisci il numero del prodotto che vuoi acquistare");
             int sceltaId = sc.nextInt();
             sc.nextLine(); 
@@ -61,7 +59,7 @@ public class Machine {
             }
         }
         System.out.println("Totale da pagare: " + total);
-    }//se no, (utente) (metodo isUser) si apre e visualizza tutti i prodotti della macchinetta divisi per numero (cercare libreria)
+    }
     //l'utente sceglie un prodotto- (implementare lista prodotti e menù visualizzazione)
     //ne vuole un altro? 
     //se si continua la selezione se no il sistema visualizza il totale dovuto
@@ -84,29 +82,31 @@ public class Machine {
 
     
     private void adminFlow(){ //se admin
-        System.out.println("Inserisci la password admin: ");
+        System.out.println("\nInserisci la password admin: ");
         Scanner sc = new Scanner(System.in); //immettere password
         String password = sc.nextLine();
         if(password.equals("mario11")){
-            System.out.println("ciao admin");
+            
         } else {
             System.out.println("password errata");
         }
 
         boolean adminLoop = true;
         while(adminLoop){
-            //TODO stampare prodotti e cassa
+            //TODO stampare cassa
+            System.out.println("\n-----------MENU ADMIN-----------");
             System.out.println("\nGestione Monete o Gestione Prodotti? (monete/prodotti/esci)");
+
             String sceltaGest = sc.nextLine();
-            if(sceltaGest.equals("monete")){
+            if(sceltaGest.equalsIgnoreCase("monete")){
                 cashManagement();
-            } else if (sceltaGest.equals("prodotti")){
+            } else if (sceltaGest.equalsIgnoreCase("prodotti")){
                 productManagement();
             } else if (sceltaGest.equalsIgnoreCase("esci")) {
                 System.out.println("Uscito dalla modalità admin");
                 adminLoop = false; //TODO ritorno a menu principale
             } else {
-                System.out.println("Errore, inserisci monete o prodotti"); //TODO ritorno a menu principale
+                System.out.println("Errore, inserisci una voce del menu valida"); 
             }
         }
     }
@@ -124,39 +124,41 @@ public class Machine {
     private void cashManagement() {
         boolean cashLoop = true;
         while (cashLoop) {
+            System.out.println("\n-----------MENU ADMIN-----------");
             System.out.println("\nGestione Monete  -  scegli un opzione");
             System.out.println("1 Aggiungi Monete");
             System.out.println("2 Rimuovi Monete");
             System.out.println("3 Esci");
-        
+            System.out.println(" ");
         
 
             int scelta = sc.nextInt();
             switch (scelta) {
                 case 1:
-                    System.out.println("Quale moneta vuoi aggiungere?");
+                    //TODO print cassa
+                    System.out.println("\nQuale moneta vuoi aggiungere?");
                     double coinAdd = sc.nextDouble();
                     System.out.println("Quante ne vuoi aggiungere?");
                     int quantityAdd = sc.nextInt();
                     cassa.addCoin(coinAdd, quantityAdd);
-                    System.out.println(quantityAdd + " monete da " + coinAdd + "€ aggiunte.");
+                    System.out.println("\n"+quantityAdd + " monete da " + coinAdd + "Euro aggiunte.");
                     break;
 
                 case 2:
-                    System.out.println("Quale moneta vuoi rimuovere?");
+                    System.out.println("\nQuale moneta vuoi rimuovere?");
                     double coinRem = sc.nextDouble();
                     System.out.println("Quante ne vuoi rimuovere?");
                     int quantityRem = sc.nextInt();
                     cassa.removeCoin(coinRem, quantityRem);
-                    System.out.println(quantityRem + " monete da " + coinRem + "€ rimosse.");
+                    System.out.println("\n"+quantityRem + " monete da " + coinRem + "€ rimosse.");
                     break;
 
                 case 3:
-                    System.err.println("Uscita dalla modalità Gestione Moneta");
+                    System.err.println("\nUscita dalla modalità Gestione Moneta");
                     cashLoop = false;
                     break;
                 default:
-                    System.out.println("Opzione non valida.");
+                    System.out.println("\nOpzione non valida.");
                     break;
 
             }
@@ -165,7 +167,62 @@ public class Machine {
     }
 
     private void productManagement() {
-        
+        boolean productLoop = true;
+        while (productLoop) {
+            System.out.println("\n-----------MENU ADMIN-----------");
+            System.out.println("\nGestione Prodotti  -  scegli un opzione");
+            System.out.println("1 Ricarica Prodotto");
+            System.out.println("2 Rimuovi Prodotto");
+            System.out.println("3 Aggiungi Nuovo Prodotto");
+            System.out.println("4 Esci");
+
+            int sceltaProd = sc.nextInt();
+            switch (sceltaProd) {
+                case 1:
+                    printProducts();
+                    System.out.println("\nInserisci Id prodotto da ricaricare");
+                    int idprod = sc.nextInt();
+                    System.out.println("Inserisci quantità da aggiungere");
+                    int qntProd = sc.nextInt();
+                    Product prod = findProductById(idprod);
+                    prod.setQuantity(prod.getQuantity() + qntProd );
+                    System.out.println(prod.getName() +" è stato ricaricato di "+qntProd+ " pezzi");
+                    break;
+                case 2 :
+                    printProducts();
+                    System.out.println("\nInserisci Id prodotto da rimuovere");
+                    int idprodotto = sc.nextInt();
+                    Product p = findProductById(idprodotto);
+                    products.remove(p);
+                    System.out.println("hai rimosso il prodotto "+ p.getName());
+                    break;
+                case 3:
+                    printProducts();
+                    System.out.println("\nNome del nuovo prodotto");
+                    String nomProd = sc.next();
+                    System.out.println("Inserisci Prezzo");
+                    double prezzProd = sc.nextDouble();
+                    System.out.println("Inserisci Quantità");
+                    int qntitProd = sc.nextInt();
+                    int newId = products.size() +1;
+                    products.add(new Product(newId, nomProd, prezzProd, qntitProd));
+                    System.out.println("\nHai aggiunto "+ qntitProd+ " pezzi di "+ nomProd+ " al prezzo di " + prezzProd);
+                    break;
+                case 4: 
+                    productLoop = false;
+                    System.out.println("\nUscito dal menù Gestione Prodotto");
+                default:
+                    System.out.println("\nOpzione non valida");
+                    break;
+            }
+        }
+    }
+
+    private void printProducts() { //stampo prodotti
+        System.out.println("\n--- Lista Prodotti ---");
+        for (Product p : products) {
+            System.out.println(p.getId() + " - " + p.getName() + " | Prezzo: " + p.getPrice() + "€ | Quantità: " + p.getQuantity());
+        }
     }
 
     private void initProducts(){ //gestisco prodotti

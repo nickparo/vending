@@ -21,7 +21,8 @@ public class Machine {
         cassa = new Cassa();
         loadState();
     }
-
+    
+    
     //carico i dati della macchinetta
     @SuppressWarnings("unchecked")
     private void loadState() {
@@ -34,8 +35,8 @@ public class Machine {
             initProducts();
             cassa = new Cassa();
         }
-    }
-
+    } 
+     
     //salvo i dati della macchinetta
     private void saveState() {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("state.ser"))) {
@@ -48,13 +49,16 @@ public class Machine {
     }
     //utente arriva alla macchinetta
     private boolean isAdmin(){ //è admin? si no
-        System.out.println("Sei admin?");
+        System.out.println("Sei admin? (si/no)");
         String risposta = sc.next();
         if(risposta.equalsIgnoreCase("si")){
             return true;
-        } else {
+        } else if(risposta.equalsIgnoreCase("no")){
             return false;
+        } else {
+            System.out.println("Risposta non valida");
         }
+        return isAdmin();
     }
 
     private void userFlow() throws InterruptedException{ //Gestione utente si apre e visualizza tutti i prodotti della macchinetta divisi per numero 
@@ -66,27 +70,31 @@ public class Machine {
             System.out.println("\nProdotti disponibili:\n");
             printProducts();
             System.out.println("\nInserisci il numero del prodotto che vuoi acquistare");
-            int sceltaId = sc.nextInt();
-            sc.nextLine(); 
-    
-            Product selectedProduct = findProductById(sceltaId);
-    
-            if(selectedProduct != null && selectedProduct.getQuantity()>0){
-                cart.add(selectedProduct);
-                total += selectedProduct.getPrice(); //totale prezzo
-                selectedProduct.setQuantity(selectedProduct.getQuantity()-1);//tolgo dalla quantità totale del prodotto selezionato un pezzo
-            } else {
-                System.out.println("Prodotto non valido o non disponibile");
+            try {
+                int sceltaId = sc.nextInt();
+                sc.nextLine(); 
+        
+                Product selectedProduct = findProductById(sceltaId);
+        
+                if(selectedProduct != null && selectedProduct.getQuantity()>0){ // controllo se prodotto selezionato esiste e disponibile
+                    cart.add(selectedProduct);
+                    total += selectedProduct.getPrice(); //totale prezzo
+                    selectedProduct.setQuantity(selectedProduct.getQuantity()-1);//tolgo dalla quantità totale del prodotto selezionato un pezzo
+                } else {
+                    System.out.println("Prodotto non valido o non disponibile");
+                }
+                System.out.println("\nVuoi continuare ad acquistare? (si o digita qualsiasi cosa per no)");
+                String risp = sc.nextLine();
+                if(risp.equalsIgnoreCase("si")){
+                    continueShopping = true;
+                } else {
+                    continueShopping = false;
+                    break;
+                }
+            } catch (Exception e) {
+                System.out.println("Errore, inserisci un valore numerico");
             }
-    
-            System.out.println("\nVuoi continuare ad acquistare? ");
-            String risp = sc.nextLine();
-            if(risp.equalsIgnoreCase("si")){
-                continueShopping = true;
-            } else {
-                continueShopping = false;
-                break;
-            }
+ 
         }
         System.out.println("\nTotale da pagare: " + total+ " EUR");
         //payment(total);
@@ -100,7 +108,7 @@ public class Machine {
     //l'utente sceglie un prodotto- (implementare lista prodotti e menù visualizzazione)
     //ne vuole un altro? 
     //se si continua la selezione se no il sistema visualizza il totale dovuto
-    //l'utente decide un metodo di pagamento (monete, banconote o carta(simulando un pagamento senza essere implementato...))
+    //l'utente decide un metodo di pagamento (monete, banconote o carta(simulando un pagamento senza essere implementato...) usando un bel thread come tetris)
     //se monete inserisce e si aspetta un eventuale resto
     //se banconote non più di 5€
     //resto viene gestito dal numero di monete dentro la macchinetta
@@ -121,29 +129,46 @@ public class Machine {
     private void adminFlow(){ //se admin
         System.out.println("\nInserisci la password admin: ");
         Scanner sc = new Scanner(System.in); //immettere password
-        String password = sc.nextLine();
-        if(password.equals("mario11")){
-            boolean adminLoop = true;
-            while(adminLoop){
-                //TODO stampare cassa
-                System.out.println("\n-----------MENU ADMIN-----------");
-                System.out.println("\nGestione Monete o Gestione Prodotti? (monete/prodotti/esci)");
-    
-                String sceltaGest = sc.nextLine();
-                if(sceltaGest.equalsIgnoreCase("monete")){
-                    cashManagement();
-                } else if (sceltaGest.equalsIgnoreCase("prodotti")){
-                    productManagement();
-                } else if (sceltaGest.equalsIgnoreCase("esci")) {
-                    System.out.println("Uscito dalla modalità admin");
-                    adminLoop = false; //TODO ritorno a menu principale
-                } else {
-                    System.out.println("Errore, inserisci una voce del menu valida"); 
+        try {
+            String password = sc.nextLine();
+            if(password.equals("mario11")){
+                boolean adminLoop = true;
+                while(adminLoop){
+                    // stampare cassa
+                    System.out.println("\n-----------MENU ADMIN-----------");
+                    System.out.println("\n1 Gestione Monete");
+                    System.out.println("2 Gestione Prodotti");
+                    System.out.println("3 Esci");
+                    try {
+                        int sceltaGest = sc.nextInt();
+                        switch (sceltaGest) {
+                            case 1:
+                                cashManagement();
+                                break;
+                            case 2:
+                                productManagement();
+                                break;
+                            case 3:
+                                adminLoop = false;
+                                System.out.println("Uscito dalla modalità admin");
+                                break;
+                            default:
+                                System.out.println("Errore, inserisci una voce del menu valida");
+                                break;
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Errore, riprova");
+                            sc.nextLine();
+                    }
                 }
+            } else {
+                System.out.println("Password errata riprova");
+                adminFlow();
             }
-        } else {
-            System.out.println("password errata");
-        }
+        } catch (Exception e) {
+            System.out.println("Errore, riprova");
+            sc.nextLine();
+        }     
     }
     //visualizzazione prodotti e quanti ce ne sono
     //aggiungi prodotto?
@@ -160,44 +185,67 @@ public class Machine {
         boolean cashLoop = true;
         while (cashLoop) {
             System.out.println("\n-----------MENU ADMIN-----------");
-            System.out.println("\nGestione Monete  -  scegli un opzione");
+            System.out.println("\nGESTIONE MONETE  -  scegli un opzione");
             System.out.println("1 Aggiungi Monete");
             System.out.println("2 Ritira Monete");
             System.out.println("3 Esci");
             System.out.println(" ");
         
-
-            int scelta = sc.nextInt();
-            switch (scelta) {
-                case 1:
-                    cassa.printCassa();
-                    System.out.println("\nQuale moneta vuoi aggiungere?");
-                    double coinAdd = sc.nextDouble();
-                    System.out.println("Quante ne vuoi aggiungere?");
-                    int quantityAdd = sc.nextInt();
-                    cassa.addCoin(coinAdd, quantityAdd);
-                    System.out.println("\n"+quantityAdd + " monete da " + coinAdd + "EUR aggiunte.");
-                    break;
-
-                case 2:
-                    cassa.printCassa();
-                    System.out.println("\nQuale moneta vuoi ritirare?");
-                    double coinRem = sc.nextDouble();
-                    System.out.println("Quante ne vuoi ritirare?");
-                    int quantityRem = sc.nextInt();
-                    cassa.removeCoin(coinRem, quantityRem);
-                    System.out.println("\n"+quantityRem + " monete da " + coinRem + "EUR ritirate.");
-                    break;
-
-                case 3:
-                    System.err.println("\nUscita dalla modalità Gestione Moneta");
-                    cashLoop = false;
-                    break;
-                default:
-                    System.out.println("\nOpzione non valida.");
-                    break;
-
+            try {
+                int scelta = sc.nextInt();
+                switch (scelta) {
+                    case 1:
+                        cassa.printCassa();
+                        System.out.println("\nQuale moneta vuoi aggiungere?");
+                        try {
+                            double coinAdd = sc.nextDouble();
+                            if((coinAdd == 0.10 || coinAdd == 0.20 || coinAdd == 0.50 || coinAdd == 1 || coinAdd == 2 )) {
+                                System.out.println("Quante ne vuoi aggiungere?");
+                                int quantityAdd = sc.nextInt();
+                                cassa.addCoin(coinAdd, quantityAdd);
+                                System.out.println("\n"+quantityAdd + " monete da " + coinAdd + "EUR aggiunte.");
+                                break;
+                            } else {
+                                System.out.println("Inserisci solo monete disponibili");
+                                continue;
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Errore, inserisci solo un valore numerico e separato dalla virgola");
+                            sc.nextLine();
+                        }
+                    case 2:
+                        cassa.printCassa();
+                        System.out.println("\nQuale moneta vuoi ritirare?");
+                        try {
+                            double coinRem = sc.nextDouble();
+                            if((coinRem == 0.10 || coinRem == 0.20 || coinRem == 0.50 || coinRem == 1 || coinRem == 2 )) {
+                                System.out.println("Quante ne vuoi ritirare?");
+                                int quantityRem = sc.nextInt();
+                                cassa.removeCoin(coinRem, quantityRem);
+                                System.out.println("\n"+quantityRem + " monete da " + coinRem + "EUR ritirate.");
+                                break;
+                            } else {
+                                System.out.println("Inserisci solo monete disponibili");
+                                continue;
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Errore, inserisci solo un valore numerico e separato dalla virgola");
+                            sc.nextLine();
+                        }
+                        
+                    case 3:
+                        System.err.println("\nUscita dalla modalità Gestione Moneta");
+                        cashLoop = false;
+                        break;
+                    default:
+                        System.out.println("\nOpzione non valida.");
+                        break;
+                }
+            } catch (Exception e) {
+                System.out.println("Errore, riprova");
+                sc.nextLine();break;
             }
+
         }
     }
 
@@ -205,50 +253,77 @@ public class Machine {
         boolean productLoop = true;
         while (productLoop) {
             System.out.println("\n-----------MENU ADMIN-----------");
-            System.out.println("\nGestione Prodotti  -  scegli un opzione");
+            System.out.println("\nGESTIONE PRODOTTI  -  scegli un opzione");
             System.out.println("1 Ricarica Prodotto");
             System.out.println("2 Rimuovi Prodotto");
             System.out.println("3 Aggiungi Nuovo Prodotto");
             System.out.println("4 Esci");
 
-            int sceltaProd = sc.nextInt();
-            switch (sceltaProd) {
-                case 1:
-                    printProducts();
-                    System.out.println("\nInserisci Id prodotto da ricaricare");
-                    int idprod = sc.nextInt();
-                    System.out.println("Inserisci quantità da aggiungere");
-                    int qntProd = sc.nextInt();
-                    Product prod = findProductById(idprod);
-                    prod.setQuantity(prod.getQuantity() + qntProd );
-                    System.out.println(prod.getName() +" è stato ricaricato di "+qntProd+ " pezzi");
-                    break;
-                case 2 :
-                    printProducts();
-                    System.out.println("\nInserisci Id prodotto da rimuovere");
-                    int idprodotto = sc.nextInt();
-                    Product p = findProductById(idprodotto);
-                    products.remove(p);
-                    System.out.println("hai rimosso il prodotto "+ p.getName());
-                    break;
-                case 3:
-                    printProducts();
-                    System.out.println("\nNome del nuovo prodotto");
-                    String nomProd = sc.next();
-                    System.out.println("Inserisci Prezzo");
-                    double prezzProd = sc.nextDouble();
-                    System.out.println("Inserisci Quantità");
-                    int qntitProd = sc.nextInt();
-                    int newId = products.size() +1;
-                    products.add(new Product(newId, nomProd, prezzProd, qntitProd));
-                    System.out.println("\nHai aggiunto "+ qntitProd+ " pezzi di "+ nomProd+ " al prezzo di " + prezzProd + " EUR");
-                    break;
-                case 4: 
-                    productLoop = false;
-                    System.out.println("\nUscito dal menù Gestione Prodotto");
-                default:
-                    System.out.println("\nOpzione non valida");
-                    break;
+            
+            try {
+                int sceltaProd = sc.nextInt();
+                switch (sceltaProd) {
+                    case 1:
+                        printProducts();
+                        System.out.println("\nInserisci Id prodotto da ricaricare");
+                        try {
+                            int idprod = sc.nextInt();
+                            System.out.println("Inserisci quantità da aggiungere");
+                            int qntProd = sc.nextInt();
+                            if(qntProd>0){
+                                Product prod = findProductById(idprod);
+                                prod.setQuantity(prod.getQuantity() + qntProd );
+                                System.out.println(prod.getName() +" è stato ricaricato di "+qntProd+ " pezzi");
+                                break;
+                            } else {
+                                System.out.println("Inserisci un numero positivo");
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Errore, riprova");
+                            sc.nextLine();
+                        }
+                   
+                    case 2 :
+                        printProducts();
+                        System.out.println("\nInserisci Id prodotto da rimuovere");
+                        try {
+                            int idprodotto = sc.nextInt();
+                            Product p = findProductById(idprodotto);
+                            products.remove(p);
+                            System.out.println("hai rimosso il prodotto "+ p.getName());
+                            break; 
+                        } catch (Exception e) {
+                            System.out.println("Errore, riprova");
+                            sc.nextLine();
+                        }
+                    case 3:
+                        printProducts();
+                        System.out.println("\nNome del nuovo prodotto");
+                        try {
+                            String nomProd = sc.next();
+                            System.out.println("Inserisci Prezzo");
+                            double prezzProd = sc.nextDouble();
+                            System.out.println("Inserisci Quantità");
+                            int qntitProd = sc.nextInt();
+                            int newId = products.size() +1;
+                            products.add(new Product(newId, nomProd, prezzProd, qntitProd));
+                            System.out.println("\nHai aggiunto "+ qntitProd+ " pezzi di "+ nomProd+ " al prezzo di " + prezzProd + " EUR");
+                            break;
+                        } catch (Exception e) {
+                            System.out.println("Errore, riprova");
+                            sc.nextLine();
+                        }
+                        
+                    case 4: 
+                        productLoop = false;
+                        System.out.println("\nUscito dal menù Gestione Prodotto");
+                    default:
+                        System.out.println("\nOpzione non valida");
+                        break;
+                }
+            } catch (Exception e) {
+                System.out.println("Errore, riprova");
+                sc.nextLine();
             }
         }
     }
@@ -292,7 +367,8 @@ public class Machine {
             case 1:
                 while (insertedAmount < total) {
                     System.out.println("\nInserisci le monete");
-                    double moneta = sc.nextDouble();
+                    try {
+                        double moneta = sc.nextDouble();
                     if(moneta == 0.05 || moneta ==0.1 || moneta == 0.2 || moneta == 0.5 || moneta == 1 || moneta ==2){
                         cassa.addCoin(moneta, 1);
                         insertedAmount += moneta;
@@ -301,17 +377,26 @@ public class Machine {
                     } else {
                         System.out.println("Moneta non accettata");
                     }
+                    } catch (Exception e) {
+                        System.out.println("Input non valido. Inserire un numero.");
+                        sc.nextLine();
+                    }
                 }
                 break;
             case 2:
                 while (insertedAmount < total) {
                     System.out.println("Inserisci Banconota   (max 5 EUR)");
-                    int banconota = sc.nextInt();
-                    if (banconota == 5){
-                        insertedAmount += banconota;
-                        System.out.println("Hai inserito una banconota da "+banconota);
-                    } else {
-                        System.out.println("Banconota inserita non valida");
+                    try {
+                        int banconota = sc.nextInt();
+                        if (banconota == 5){
+                            insertedAmount += banconota;
+                            System.out.println("Hai inserito una banconota da "+banconota);
+                        } else {
+                            System.out.println("Banconota inserita non valida");
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Input non valido. Inserire un numero.");
+                        sc.nextLine();
                     }
                 }
                 break;
@@ -327,8 +412,9 @@ public class Machine {
                 insertedAmount = total;
                 break;
             default:
-                System.out.println("\nOpzione non valida");
-                return false;
+                System.out.println("\nOpzione non valida, riprova");
+                payment(total);
+                //return false;
         }
         //calcolo resto
         double change = insertedAmount - total;
@@ -350,12 +436,25 @@ public class Machine {
         } else {
             userFlow();
         }
-        saveState();
     }
     
     public static void main(String[] args) throws InterruptedException {
         Machine machine =new Machine();
-        machine.start();
-        
+        Scanner sca = new Scanner(System.in);
+        while (true) {
+            machine.start();
+            System.out.println("\nVuoi continuare? si/no");
+            try {
+                String risposta = sca.nextLine();
+                if (risposta.equalsIgnoreCase("no")) {
+                    System.out.println("Grazie per averci scelto, Ciao!");
+                    break;
+                }
+            } catch (Exception e) {
+                System.out.println("Errore, riprova");
+            }
+        }
+        machine.saveState();
+        sca.close();
     }
 }

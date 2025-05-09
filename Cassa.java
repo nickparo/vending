@@ -81,12 +81,15 @@ public class Cassa implements Serializable {
             for (Map.Entry<Double, Integer> entry : restoDaDare.entrySet()) {
                 removeCoin(entry.getKey(), entry.getValue());
             }
-    
             System.out.println("Resto dato:");
             for (Map.Entry<Double, Integer> entry : restoDaDare.entrySet()) {
                 System.out.println(entry.getValue() + " moneta/e da " + entry.getKey() + " EUR");
             }
             return true;
+        } else if (Math.abs(change) >= 0){
+            System.out.println("Resto dato: 0 EUR");
+            return true;
+            
         } else {
             System.out.println("Impossibile dare il resto corretto con le monete disponibili.");
             return false;

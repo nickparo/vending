@@ -1,5 +1,10 @@
 package Macchinetta;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -14,8 +19,33 @@ public class Machine {
         initProducts();
         sc = new Scanner(System.in);
         cassa = new Cassa();
+        loadState();
     }
 
+    //carico i dati della macchinetta
+    @SuppressWarnings("unchecked")
+    private void loadState() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("state.ser"))) {
+            products = (List<Product>) ois.readObject();
+            cassa = (Cassa) ois.readObject();
+            System.out.println("Stato caricato correttamente.");
+        } catch (Exception e) {
+            System.out.println("Nessun stato precedente trovato. Uso configurazione iniziale.");
+            initProducts();
+            cassa = new Cassa();
+        }
+    }
+
+    //salvo i dati della macchinetta
+    private void saveState() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("state.ser"))) {
+            oos.writeObject(products);
+            oos.writeObject(cassa);
+            System.out.println("Stato salvato con successo.");
+        } catch (IOException e) {
+            System.out.println("Errore durante il salvataggio dello stato: " + e.getMessage());
+        }
+    }
     //utente arriva alla macchinetta
     private boolean isAdmin(){ //è admin? si no
         System.out.println("Sei admin?");
@@ -35,7 +65,7 @@ public class Machine {
         while (continueShopping) {
             System.out.println("\nProdotti disponibili:\n");
             printProducts();
-            System.out.println("Inserisci il numero del prodotto che vuoi acquistare");
+            System.out.println("\nInserisci il numero del prodotto che vuoi acquistare");
             int sceltaId = sc.nextInt();
             sc.nextLine(); 
     
@@ -49,7 +79,7 @@ public class Machine {
                 System.out.println("Prodotto non valido o non disponibile");
             }
     
-            System.out.println("Vuoi continuare ad acquistare? ");
+            System.out.println("\nVuoi continuare ad acquistare? ");
             String risp = sc.nextLine();
             if(risp.equalsIgnoreCase("si")){
                 continueShopping = true;
@@ -58,8 +88,13 @@ public class Machine {
                 break;
             }
         }
-        System.out.println("Totale da pagare: " + total+ " EUR");
-        payment(total);
+        System.out.println("\nTotale da pagare: " + total+ " EUR");
+        //payment(total);
+        if (payment(total)) {
+            System.out.println("Pagamento completato. Grazie per l'acquisto!");
+        } else {
+            System.out.println("Transazione annullata.");
+        }
     }
 
     //l'utente sceglie un prodotto- (implementare lista prodotti e menù visualizzazione)
@@ -127,7 +162,7 @@ public class Machine {
             System.out.println("\n-----------MENU ADMIN-----------");
             System.out.println("\nGestione Monete  -  scegli un opzione");
             System.out.println("1 Aggiungi Monete");
-            System.out.println("2 Rimuovi Monete");
+            System.out.println("2 Ritira Monete");
             System.out.println("3 Esci");
             System.out.println(" ");
         
@@ -146,12 +181,12 @@ public class Machine {
 
                 case 2:
                     cassa.printCassa();
-                    System.out.println("\nQuale moneta vuoi rimuovere?");
+                    System.out.println("\nQuale moneta vuoi ritirare?");
                     double coinRem = sc.nextDouble();
-                    System.out.println("Quante ne vuoi rimuovere?");
+                    System.out.println("Quante ne vuoi ritirare?");
                     int quantityRem = sc.nextInt();
                     cassa.removeCoin(coinRem, quantityRem);
-                    System.out.println("\n"+quantityRem + " monete da " + coinRem + "EUR rimosse.");
+                    System.out.println("\n"+quantityRem + " monete da " + coinRem + "EUR ritirate.");
                     break;
 
                 case 3:
@@ -219,9 +254,12 @@ public class Machine {
     }
 
     private void printProducts() { //stampo prodotti
-        System.out.println("\n--- Lista Prodotti ---");
+        System.out.println("\n----------------- Lista Prodotti -----------------");
+        System.out.printf("%-4s %-20s %-10s %-10s%n", "\nID", "Nome", "Prezzo", "Quantità");
+        System.out.println("--------------------------------------------------");
         for (Product p : products) {
-            System.out.println(p.getId() + " - " + p.getName() + " | Prezzo: " + p.getPrice() + " EUR | Quantità: " + p.getQuantity());
+            System.out.printf("%-4d %-20s %-10.2f %-10d%n", 
+            p.getId(), p.getName(), p.getPrice(), p.getQuantity());
         }
     }
 
@@ -242,11 +280,11 @@ public class Machine {
 
     }
 
-    public void payment(double total) throws InterruptedException{
+    public boolean payment(double total) throws InterruptedException{
         double insertedAmount = 0.0;
-        System.out.println("Scegli un metodo di Pagamento  - scegli un opzione");
+        System.out.println("\n------Scegli un metodo di Pagamento  - scegli un opzione------");
         System.out.println("1 Monete");
-        System.out.println("2 Banconote (Max 10 EUR)");
+        System.out.println("2 Banconote (Max 5 EUR)");
         System.out.println("3 Carta");
 
         int metodo = sc.nextInt();
@@ -258,7 +296,8 @@ public class Machine {
                     if(moneta == 0.05 || moneta ==0.1 || moneta == 0.2 || moneta == 0.5 || moneta == 1 || moneta ==2){
                         cassa.addCoin(moneta, 1);
                         insertedAmount += moneta;
-                        System.out.println("Hai inserito " + insertedAmount + " EUR");
+                        insertedAmount = Math.round(insertedAmount * 100.0) / 100.0;
+                        System.out.println("Hai inserito " + insertedAmount + " EUR su " + total + " EUR" );
                     } else {
                         System.out.println("Moneta non accettata");
                     }
@@ -266,10 +305,11 @@ public class Machine {
                 break;
             case 2:
                 while (insertedAmount < total) {
-                    System.out.println("Inserisci Banconote");
+                    System.out.println("Inserisci Banconota   (max 5 EUR)");
                     int banconota = sc.nextInt();
-                    if (banconota == 5 || banconota == 10){
+                    if (banconota == 5){
                         insertedAmount += banconota;
+                        System.out.println("Hai inserito una banconota da "+banconota);
                     } else {
                         System.out.println("Banconota inserita non valida");
                     }
@@ -278,21 +318,30 @@ public class Machine {
             case 3:
                 System.out.println("\nAppoggia la carta per il pagamento");
                 Thread.sleep(1000);
-                System.out.println("Pagamento di"+total+" EUR in corso, attendere prego");
+                System.out.println("Pagamento di "+total+" EUR in corso, attendere prego");
                 Thread.sleep(1000);
                 System.out.println("\n---------------------");
                 Thread.sleep(1000);
                 System.out.println("\n---------------------");
-                Thread.sleep(1000);
-                System.out.println("\nPagamento completato, Grazie per l'acquisto.");
+                Thread.sleep(2000);
                 insertedAmount = total;
                 break;
             default:
                 System.out.println("\nOpzione non valida");
-                break;
+                return false;
         }
+        //calcolo resto
+        double change = insertedAmount - total;
+        change = Math.round(change * 100)/ 100.0;
 
-        
+        if(change > 0.0){
+            System.out.println("Resto da erogare: "+ change +" EUR");
+        }   
+            if (!cassa.giveChange(change)){
+                System.out.println("Resto non disponibile");
+                return false;
+            }
+        return true;
     }
 
     public void start() throws InterruptedException{
@@ -301,6 +350,7 @@ public class Machine {
         } else {
             userFlow();
         }
+        saveState();
     }
     
     public static void main(String[] args) throws InterruptedException {
